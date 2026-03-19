@@ -1644,11 +1644,13 @@ export default function App() {
 
   return (
     <div className="max-w-md mx-auto h-screen bg-[#1C3626] relative shadow-2xl flex flex-col font-sans overflow-hidden">
-      {!firebaseReady && missingFirebaseEnv.length > 0 && (
-        <div className="absolute top-2 left-2 right-2 z-50 text-[10px] text-[#567E63] bg-[#162C1E] border border-[#365D43] p-2 rounded-xl">
-          Firebase 未設定：{missingFirebaseEnv.join(', ')}（已切換為本地模式）
-        </div>
-      )}
+      <div className="absolute top-2 left-2 right-2 z-50 text-[10px] text-[#567E63] bg-[#162C1E] border border-[#365D43] p-2 rounded-xl">
+        {firebaseReady ? (
+          <span>Firebase 已連線：appId={appId}</span>
+        ) : (
+          <span>Firebase 未設定：{missingFirebaseEnv.join(', ')}（已切換為本地模式）</span>
+        )}
+      </div>
       <div className="flex-1 overflow-hidden relative">
         {idx === 0 && renderPetHome()}
         {idx === 1 && renderActions()}
