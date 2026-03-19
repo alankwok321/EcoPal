@@ -22,8 +22,12 @@ export default async function handler(req, res) {
   }
 
   const key = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
-  if (!key) {
-    return res.status(500).json({ error: 'GOOGLE_AI_API_KEY not configured' });
+  const openaiKey = process.env.OPENAI_API_KEY;
+  const openaiBase = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
+  const openaiImageModel = process.env.OPENAI_IMAGE_MODEL || process.env.OPENAI_MODEL;
+
+  if (!key && !openaiKey) {
+    return res.status(500).json({ error: 'AI key not configured' });
   }
 
   const { prompt } = req.body || {};
@@ -32,6 +36,38 @@ export default async function handler(req, res) {
   }
 
   try {
+    if (openaiKey && openaiImageModel) {
+      const r = await fetch(`${openaiBase}/images/generations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${openaiKey}`,
+        },
+        body: JSON.stringify({
+          model: openaiImageModel,
+          prompt,
+          size: '1024x1024',
+          response_format: 'b64_json',
+        }),
+      });
+
+      const data = await r.json();
+      if (!r.ok) {
+        return res.status(r.status).json({ error: data?.error || 'Upstream error' });
+      }
+
+      const imageBase64 = data?.data?.[0]?.b64_json;
+      if (!imageBase64) {
+        return res.status(500).json({ error: 'No image returned' });
+      }
+
+      return res.status(200).json({ imageBase64 });
+    }
+
+    if (!key) {
+      return res.status(500).json({ error: 'GOOGLE_AI_API_KEY not configured' });
+    }
+
     const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${key}`;
     const payload = { instances: { prompt }, parameters: { sampleCount: 1 } };
 
