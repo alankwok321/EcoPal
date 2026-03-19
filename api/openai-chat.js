@@ -32,14 +32,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    const r = await fetch('https://api.openai.com/v1/chat/completions', {
+    const baseUrl = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
+    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+
+    const r = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${key}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.2,
       }),
