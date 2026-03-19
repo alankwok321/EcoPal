@@ -11,16 +11,30 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const missing = Object.entries(firebaseConfig)
-  .filter(([, v]) => !v)
-  .map(([k]) => k);
+const requiredKeys = [
+  'apiKey',
+  'authDomain',
+  'projectId',
+  'storageBucket',
+  'messagingSenderId',
+  'appId',
+];
 
-if (missing.length > 0) {
+export const missingFirebaseEnv = requiredKeys.filter((k) => !firebaseConfig[k]);
+export const firebaseReady = missingFirebaseEnv.length === 0;
+
+let app = null;
+let auth = null;
+let db = null;
+
+if (firebaseReady) {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+} else {
   // eslint-disable-next-line no-console
-  console.warn('[Firebase] Missing env:', missing.join(', '));
+  console.warn('[Firebase] Missing env:', missingFirebaseEnv.join(', '));
 }
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+export { app, auth, db };
 export const appId = import.meta.env.VITE_APP_ID || 'carbon-planet-app';
