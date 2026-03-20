@@ -46,9 +46,17 @@ export default async function handler(req, res) {
       body: JSON.stringify(payload),
     });
 
-    const result = await r.json();
+    const raw = await r.text();
+    let result = {};
+    try {
+      result = raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      result = { error: raw || 'Non-JSON response' };
+    }
     if (!r.ok) {
-      return res.status(r.status).json({ error: result?.error || 'Upstream error', verified: false, reason: 'AI 服務異常' });
+      return res
+        .status(r.status)
+        .json({ error: result?.error || result || 'Upstream error', verified: false, reason: 'AI 服務異常' });
     }
 
     const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';

@@ -51,14 +51,20 @@ export default async function handler(req, res) {
         }),
       });
 
-      const data = await r.json();
+      const text = await r.text();
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (e) {
+        data = { error: text || 'Non-JSON response' };
+      }
       if (!r.ok) {
-        return res.status(r.status).json({ error: data?.error || 'Upstream error' });
+        return res.status(r.status).json({ error: data?.error || data || 'Upstream error' });
       }
 
       const imageBase64 = data?.data?.[0]?.b64_json;
       if (!imageBase64) {
-        return res.status(500).json({ error: 'No image returned' });
+        return res.status(500).json({ error: data?.error || 'No image returned' });
       }
 
       return res.status(200).json({ imageBase64 });
@@ -77,14 +83,20 @@ export default async function handler(req, res) {
       body: JSON.stringify(payload),
     });
 
-    const data = await r.json();
+    const text = await r.text();
+    let data = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch (e) {
+      data = { error: text || 'Non-JSON response' };
+    }
     if (!r.ok) {
-      return res.status(r.status).json({ error: data?.error || 'Upstream error' });
+      return res.status(r.status).json({ error: data?.error || data || 'Upstream error' });
     }
 
     const imageBase64 = data?.predictions?.[0]?.bytesBase64Encoded;
     if (!imageBase64) {
-      return res.status(500).json({ error: 'No image returned' });
+      return res.status(500).json({ error: data?.error || 'No image returned' });
     }
 
     return res.status(200).json({ imageBase64 });
