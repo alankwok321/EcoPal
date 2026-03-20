@@ -78,12 +78,18 @@ export default async function handler(req, res) {
           .json({ error: result?.error || result || 'Upstream error', verified: false, reason: 'AI 服務異常' });
       }
 
-      const text = result?.choices?.[0]?.message?.content || '{}';
+      const text = result?.choices?.[0]?.message?.content || '';
       let parsed = {};
       try {
         parsed = JSON.parse(text);
       } catch (e) {
-        parsed = { verified: false, reason: 'AI 回傳格式異常' };
+        const compact = String(text || '').trim();
+        const yes = /(pass|verified|true|yes|通過|符合|是)/i.test(compact);
+        const no = /(fail|false|no|不通過|不符合|否)/i.test(compact);
+        parsed = {
+          verified: yes && !no,
+          reason: compact ? compact.slice(0, 180) : 'AI 回傳格式異常',
+        };
       }
 
       return res.status(200).json({
