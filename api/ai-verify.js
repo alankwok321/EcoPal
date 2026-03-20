@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid payload', verified: false, reason: '缺少圖片或任務資訊' });
   }
 
-  const prompt = `You are an AI verifying an eco-friendly action. The user claims this image shows: "${taskName}". Respond JSON only: {"verified": boolean, "reason": string}`;
+  const prompt = `你是環保行為審核 AI。使用者宣稱這張圖是：「${taskName}」。請只回傳 JSON（不要 markdown、不要程式碼區塊），格式為 {"verified": boolean, "reason": string}，reason 請用繁體中文。`;
 
   try {
     if (process.env.OPENAI_API_KEY) {
@@ -79,11 +79,12 @@ export default async function handler(req, res) {
       }
 
       const text = result?.choices?.[0]?.message?.content || '';
+      const cleaned = String(text || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
       let parsed = {};
       try {
-        parsed = JSON.parse(text);
+        parsed = JSON.parse(cleaned);
       } catch (e) {
-        const compact = String(text || '').trim();
+        const compact = cleaned.trim();
         const yes = /(pass|verified|true|yes|通過|符合|是)/i.test(compact);
         const no = /(fail|false|no|不通過|不符合|否)/i.test(compact);
         parsed = {
