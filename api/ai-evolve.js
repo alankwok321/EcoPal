@@ -87,12 +87,15 @@ export default async function handler(req, res) {
       // Images API mode
       let imageBase64 = data?.data?.[0]?.b64_json;
 
-      // Chat-completions mode: expect a data URL in choices[0].message.content
-      if (!imageBase64 && isChatEndpoint) {
+      // Chat-completions (or any text) mode: try to extract a data URL from assistant content
+      // We do this even if isChatEndpoint is false, because some proxies may still return chat-shaped payloads.
+      if (!imageBase64) {
         const content = data?.choices?.[0]?.message?.content;
         if (typeof content === 'string') {
-          const m = content.trim().match(/^data:image\/[a-zA-Z0-9.+-]+;base64,(.*)$/s);
-          if (m?.[1]) imageBase64 = m[1].trim();
+          const trimmed = content.trim();
+          // direct data url or markdown image
+          const m = trimmed.match(/data:image\/[a-zA-Z0-9.+-]+;base64,([A-Za-z0-9+/=\s]+)/s);
+          if (m?.[1]) imageBase64 = m[1].replace(/\s+/g, '').trim();
         }
       }
 
