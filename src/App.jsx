@@ -179,6 +179,28 @@ const fetchWithRetry = async (url, options, retries = 4, delay = 800) => {
   return {};
 };
 
+const compressImageDataUrl = (dataUrl, maxSize = 1024, quality = 0.75) =>
+  new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width;
+      let h = img.height;
+      if (w > maxSize || h > maxSize) {
+        const ratio = Math.min(maxSize / w, maxSize / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+
 export default function App() {
   const usingFirebase = firebaseReady;
   const [showSplash, setShowSplash] = useState(true);
@@ -1419,9 +1441,10 @@ export default function App() {
     };
 
     const verifyWithGemini = async (base64Data, mimeType, taskName) => {
+      const compressed = await compressImageDataUrl(base64Data, 1024, 0.72);
       const payload = {
-        mimeType,
-        data: base64Data.split(',')[1],
+        mimeType: 'image/jpeg',
+        data: compressed.split(',')[1],
         taskName,
       };
       try {
