@@ -48,11 +48,11 @@ export default async function handler(req, res) {
               {
                 role: 'system',
                 content:
-                  'You are an image generator. Output MUST be ONLY a single data URL (data:image/...;base64,...) and nothing else. No markdown, no code fences.'
+                  'You are an image generator. Output MUST be ONLY a single data URL (data:image/...;base64,...) and nothing else. No markdown, no code fences. The image MUST be a PNG with a fully transparent background (alpha channel).'
               },
               {
                 role: 'user',
-                content: `Generate an image of: ${prompt}\nReturn ONLY a single data URL starting with data:image/ and nothing else.`
+                content: `Generate an image of: ${prompt}\nRequirements: (1) PNG format, (2) background fully transparent (alpha channel), (3) subject isolated with clean edges, (4) no solid/gradient background, no shadow, no floor.\nReturn ONLY a single data URL starting with data:image/ and nothing else.`
               }
             ],
             temperature: 0.2
