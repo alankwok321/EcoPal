@@ -451,9 +451,12 @@ export default function App() {
     return () => unsubscribe();
   }, [isAuthReady, user, usingFirebase]);
 
-  // 5. 同步排行榜
+  // 5. 同步排行榜（僅非匿名帳號）
   useEffect(() => {
-    if (!isAuthReady || !user || !usingFirebase || !db) return undefined;
+    if (!isAuthReady || !user || !usingFirebase || !db || user.isAnonymous) {
+      setLeaderboard([]);
+      return undefined;
+    }
     const lbRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
     const unsubscribe = onSnapshot(
       lbRef,
@@ -467,9 +470,9 @@ export default function App() {
     return () => unsubscribe();
   }, [isAuthReady, user, usingFirebase]);
 
-  // 6. 更新自身排行榜進度
+  // 6. 更新自身排行榜進度（僅非匿名帳號）
   useEffect(() => {
-    if (!isAuthReady || !user || !isLoaded || !usingFirebase || !db) return;
+    if (!isAuthReady || !user || !isLoaded || !usingFirebase || !db || user.isAnonymous) return;
     const syncMyLevel = async () => {
       try {
         const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', user.uid);
