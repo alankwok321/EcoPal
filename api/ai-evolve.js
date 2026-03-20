@@ -39,18 +39,38 @@ export default async function handler(req, res) {
   try {
     if (openaiKey && openaiImageModel) {
       const url = openaiImageEndpoint || `${openaiBase}/images/generations`;
+      const isChatEndpoint = /\/chat\/completions\/?$/.test(url);
+
+      const body = isChatEndpoint
+        ? {
+            model: openaiImageModel,
+            messages: [
+              {
+                role: 'system',
+                content:
+                  'You are an image generator. Output MUST be ONLY a single data URL (data:image/...;base64,...) and nothing else. No markdown, no code fences.'
+              },
+              {
+                role: 'user',
+                content: `Generate an image of: ${prompt}\nReturn ONLY a single data URL starting with data:image/ and nothing else.`
+              }
+            ],
+            temperature: 0.2
+          }
+        : {
+            model: openaiImageModel,
+            prompt,
+            size: '1024x1024',
+            response_format: 'b64_json'
+          };
+
       const r = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${openaiKey}`,
+          Authorization: `Bearer ${openaiKey}`
         },
-        body: JSON.stringify({
-          model: openaiImageModel,
-          prompt,
-          size: '1024x1024',
-          response_format: 'b64_json',
-        }),
+        body: JSON.stringify(body)
       });
 
       const text = await r.text();
@@ -64,7 +84,18 @@ export default async function handler(req, res) {
         return res.status(r.status).json({ error: data?.error || data || 'Upstream error' });
       }
 
-      const imageBase64 = data?.data?.[0]?.b64_json;
+      // Images API mode
+      let imageBase64 = data?.data?.[0]?.b64_json;
+
+      // Chat-completions mode: expect a data URL in choices[0].message.content
+      if (!imageBase64 && isChatEndpoint) {
+        const content = data?.choices?.[0]?.message?.content;
+        if (typeof content === 'string') {
+          const m = content.trim().match(/^data:image\/[a-zA-Z0-9.+-]+;base64,(.*)$/s);
+          if (m?.[1]) imageBase64 = m[1].trim();
+        }
+      }
+
       if (!imageBase64) {
         return res.status(500).json({ error: data?.error || 'No image returned' });
       }
