@@ -689,8 +689,23 @@ export default function App() {
         body: JSON.stringify({ prompt }),
       });
 
-      if (data && data.imageBase64) {
-        const rawImageUrl = `data:image/png;base64,${data.imageBase64}`;
+      if (!data?.jobId) throw new Error('No job id returned');
+
+      let jobResult = null;
+      for (let i = 0; i < 60; i += 1) {
+        await new Promise((r) => setTimeout(r, 1500));
+        const status = await fetchWithRetry(`/api/ai-evolve?id=${data.jobId}`);
+        if (status?.status === 'done' && status?.imageBase64) {
+          jobResult = status;
+          break;
+        }
+        if (status?.status === 'error') {
+          throw new Error(status?.error || 'AI 進化失敗');
+        }
+      }
+
+      if (jobResult?.imageBase64) {
+        const rawImageUrl = `data:image/png;base64,${jobResult.imageBase64}`;
         const transparentImageUrl = await removeBackgroundByFloodFill(rawImageUrl);
 
         setPetImage(transparentImageUrl);
@@ -705,7 +720,7 @@ export default function App() {
 
         showToast(`✨ 進化成功！${petName} 獲得了新形態！`);
       } else {
-        throw new Error('No prediction returned');
+        throw new Error('AI 進化等待逾時，請再試一次');
       }
     } catch (e) {
       console.error('Evolution error:', e);
