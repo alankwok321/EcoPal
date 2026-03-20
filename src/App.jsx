@@ -451,12 +451,9 @@ export default function App() {
     return () => unsubscribe();
   }, [isAuthReady, user, usingFirebase]);
 
-  // 5. 同步排行榜（僅非匿名帳號）
+  // 5. 同步排行榜（匿名可讀、不可寫）
   useEffect(() => {
-    if (!isAuthReady || !user || !usingFirebase || !db || user.isAnonymous) {
-      setLeaderboard([]);
-      return undefined;
-    }
+    if (!isAuthReady || !user || !usingFirebase || !db) return undefined;
     const lbRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
     const unsubscribe = onSnapshot(
       lbRef,
