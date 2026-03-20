@@ -25,6 +25,7 @@ export default async function handler(req, res) {
   const openaiKey = process.env.OPENAI_API_KEY;
   const openaiBase = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
   const openaiImageModel = process.env.OPENAI_IMAGE_MODEL || process.env.OPENAI_MODEL;
+  const openaiImageEndpoint = process.env.OPENAI_IMAGE_ENDPOINT;
 
   if (!key && !openaiKey) {
     return res.status(500).json({ error: 'AI key not configured' });
@@ -37,7 +38,8 @@ export default async function handler(req, res) {
 
   try {
     if (openaiKey && openaiImageModel) {
-      const r = await fetch(`${openaiBase}/images/generations`, {
+      const url = openaiImageEndpoint || `${openaiBase}/images/generations`;
+      const r = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
