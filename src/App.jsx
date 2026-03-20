@@ -394,7 +394,7 @@ export default function App() {
         lastPlayDate: new Date().toDateString(),
       };
 
-      if (!usingFirebase || !db) {
+      if (!usingFirebase || !db || user?.isAnonymous) {
         saveLocal(payload);
         return;
       }
